@@ -1,0 +1,55 @@
+rule all:
+    input:
+        "results/figure.png",
+
+rule get_data:
+    input:
+        "scripts/get_data.py",
+    output:
+        "data/costs_2030.csv",
+        "data/time-series-lecture-2.csv",
+    shell:
+        "python scripts/get_data.py"
+
+rule get_costs:
+    input:
+        "data/costs_2030.csv",
+        "scripts/get_costs.py",
+    output:
+        "data/costs.csv",
+    shell:
+        "python scripts/get_costs.py"
+
+rule get_timeseries:
+    input:
+        "data/time-series-lecture-2.csv",
+        "scripts/get_costs.py",
+    output:
+        "data/timeseries.csv",
+    shell:
+        "python scripts/get_timeseries.py"
+
+rule build_model:
+    input:
+        "data/costs.csv",
+        "data/timeseries.csv",
+    output:
+        "results/cem.nc",
+    shell:
+        "python scripts/build_model.py"
+
+rule solve:
+    input:
+        "results/cem.nc",
+    output:
+        "results/cem_solved.nc",
+    shell:
+        "python scripts/solve.py"
+
+rule plot:
+    input:
+        rules.solve.output,
+    output:
+        "results/figure.png",
+    shell:
+        "python scripts/plot.py {input} {output}"
