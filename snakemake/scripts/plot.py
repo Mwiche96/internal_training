@@ -18,9 +18,16 @@ def main(network: pypsa.Network):
 
 if __name__ == "__main__":
 
-    solved_network_path = os.path.join("results", "cem_solved.nc")
+    import sys
+
+    args = sys.argv[1:]
+
+    solved_network_path = args[0]
+
+    # solved_network_path = os.path.join("results", "cem_solved.nc")
     solved_network = pypsa.Network(solved_network_path)
 
-    figure_path = os.path.join("results", "figure.png")
+    figure_path = args[1]
+    # figure_path = os.path.join("results", "figure.png")
     fig = main(solved_network)
     fig.savefig(figure_path)
