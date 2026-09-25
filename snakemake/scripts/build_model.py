@@ -22,7 +22,9 @@ pypsa.options.params.optimize.include_objective_constant = True
 RESOLUTION = 4
 
 
-def main(costs: pd.DataFrame, ts: pd.DataFrame) -> pypsa.Network:
+def main(
+    costs: pd.DataFrame, ts: pd.DataFrame, CO2_constraint: float = 0
+) -> pypsa.Network:
     """For building the model, we start again by initialising an empty network.
 
     Arguments
@@ -127,6 +129,46 @@ def main(costs: pd.DataFrame, ts: pd.DataFrame) -> pypsa.Network:
             efficiency=costs.at[tech, "efficiency"],
             p_nom_extendable=True,
         )
+
+    n.add(
+        "StorageUnit",
+        "battery storage",
+        bus="electricity",
+        carrier="battery storage",
+        max_hours=4,
+        capital_cost=costs.at["battery inverter", "capital_cost"]
+        + 4 * costs.at["battery storage", "capital_cost"],
+        efficiency_store=costs.at["battery inverter", "efficiency"],
+        efficiency_dispatch=costs.at["battery inverter", "efficiency"],
+        p_nom_extendable=True,
+        cyclic_state_of_charge=True,
+    )
+    capital_costs = (
+        costs.at["electrolysis", "capital_cost"]
+        + costs.at["fuel cell", "capital_cost"]
+        + 336 * costs.at["hydrogen storage underground", "capital_cost"]
+    )
+
+    n.add(
+        "StorageUnit",
+        "hydrogen storage underground",
+        bus="electricity",
+        carrier="hydrogen storage underground",
+        max_hours=336,
+        capital_cost=capital_costs,
+        efficiency_store=costs.at["electrolysis", "efficiency"],
+        efficiency_dispatch=costs.at["fuel cell", "efficiency"],
+        p_nom_extendable=True,
+        cyclic_state_of_charge=True,
+    )
+
+    n.add(
+        "GlobalConstraint",
+        "CO2Limit",
+        carrier_attribute="co2_emissions",
+        sense="<=",
+        constant=CO2_constraint,
+    )
 
     return n
 
